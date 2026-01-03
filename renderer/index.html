@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Vessel Dossier V0.1 | Port Operations</title>
+    <style>
+        :root { 
+            --bg-gradient: radial-gradient(circle at top left, #e0f2fe, #f9fafb 45%, #eef2ff);
+            --card-bg: #ffffff; 
+            --accent: #1e40af; 
+            --success: #059669; 
+            --pdf-accent: #7c3aed;
+            --text-main: #1e293b;
+            --radius: 12px;
+        }
+
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            padding: 25px; margin: 0; 
+            background: var(--bg-gradient); color: var(--text-main);
+        }
+
+        .container { max-width: 1150px; margin: auto; }
+
+        /* HEADER & NAV MODIFIÉ */
+        .nav-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .logo { max-width: 200px; }
+        
+        /* Menu Dynamique UI au milieu */
+        .custom-menu-bar { display: flex; gap: 15px; flex-grow: 1; justify-content: center; }
+        .menu-item { position: relative; }
+        .menu-trigger { background: transparent; border: none; font-weight: 700; color: var(--accent); cursor: pointer; padding: 8px 15px; border-radius: 6px; transition: 0.2s; text-transform: uppercase; font-size: 0.8rem; }
+        .menu-trigger:hover { background: rgba(30, 64, 175, 0.1); }
+
+        .dropdown-content { display: none; position: absolute; background: white; min-width: 180px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); border-radius: 8px; z-index: 100; top: 100%; border: 1px solid #e2e8f0; }
+        .dropdown-content a { color: var(--text-main); padding: 10px 15px; text-decoration: none; display: block; font-size: 0.85rem; font-weight: 500; }
+        .dropdown-content a:hover { background: #f8fafc; color: var(--accent); border-radius: 8px; }
+        .menu-item:hover .dropdown-content { display: block; }
+
+        .lang-group { display: flex; gap: 8px; align-items: center; }
+
+        /* RESTE DU DESIGN (INCHANGÉ) */
+        .card { 
+            background: var(--card-bg); border-radius: var(--radius); 
+            padding: 22px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            border: 1px solid rgba(255, 255, 255, 0.7);
+        }
+
+        h2 { font-size: 0.85rem; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; margin-top: 0; margin-bottom: 18px; font-weight: 800; }
+        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
+        .input-group { display: flex; flex-direction: column; gap: 5px; }
+        label { font-size: 0.72rem; font-weight: 700; color: #64748b; text-transform: uppercase; }
+        input, select { padding: 10px 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; font-size: 0.9rem; outline: none; transition: 0.2s; }
+        input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1); }
+        .btn-lang { background: #64748b; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 600; }
+        #btnClear { background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.75rem; }
+        .op-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 5px; }
+        .op-btn { padding: 14px; border-radius: 10px; border: 2px solid #e2e8f0; background: #f8fafc; font-weight: 800; cursor: pointer; transition: 0.3s; color: #64748b; text-transform: uppercase; }
+        .btn-active { border-color: var(--success) !important; color: var(--success) !important; background: #ecfdf5 !important; }
+        .cargo-controls { display: flex; gap: 10px; background: #f8fafc; padding: 15px; border-radius: 10px; border: 1px dashed #cbd5e1; }
+        .cargo-item { background: #f0f9ff; padding: 10px 15px; border-radius: 8px; display: flex; justify-content: space-between; margin-bottom: 6px; border: 1px solid #bae6fd; font-size: 0.85rem; }
+        .delete-btn { background: #ef4444; color: white; border: none; border-radius: 4px; padding: 2px 8px; cursor: pointer; }
+        .action-row { display: grid; grid-template-columns: 1.5fr 1.5fr 1fr; gap: 15px; margin-top: 25px; }
+        .btn-main { padding: 16px; border-radius: 12px; border: none; font-weight: 700; color: white; cursor: pointer; text-transform: uppercase; font-size: 0.85rem; transition: 0.2s; }
+        #btnGenerate { background: var(--accent); }
+        #btnPdf { background: var(--pdf-accent); }
+        #btnFolder { background: #475569; }
+        #logConsole { margin-top: 25px; background: #0f172a; color: #38bdf8; padding: 18px; font-family: 'Consolas', monospace; font-size: 0.8rem; border-radius: 10px; height: 120px; overflow-y: auto; border: 1px solid #1e293b; line-height: 1.5; }
+        .footer { text-align: center; margin-top: 30px; font-size: 0.85rem; color: #64748b; padding-bottom: 20px; }
+        .footer a { color: var(--accent); text-decoration: none; font-weight: bold; }
+        #extraDakhla { display: none; grid-column: span 4; margin-top: 15px; padding-top: 15px; border-top: 2px dashed #e2e8f0; }
+
+        /* MODAL (POPUP AIDE) */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(3px); }
+        .modal-content { background-color: white; margin: 10% auto; padding: 30px; border-radius: 12px; width: 450px; border: 2px solid var(--accent); box-shadow: 0 10px 30px rgba(0,0,0,0.2); text-align: center; }
+        .close-modal { float: right; font-size: 28px; font-weight: bold; cursor: pointer; color: #64748b; margin-top: -20px; }
+
+        /* UPDATE NOTIFICATIONS */
+        .update-notification, .update-ready-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            border-left: 4px solid #2196F3;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-radius: 8px;
+            padding: 16px;
+            z-index: 1000;
+            max-width: 350px;
+            display: none;
+        }
+
+        .update-ready-notification {
+            border-left: 4px solid var(--success);
+        }
+
+        .update-content h3 {
+            margin-top: 0;
+            color: #2196F3;
+            margin-bottom: 8px;
+        }
+
+        .update-ready-notification .update-content h3 {
+            color: var(--success);
+        }
+
+        .update-content p {
+            margin: 8px 0;
+            color: var(--text-main);
+            font-size: 0.9rem;
+        }
+
+        .update-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .update-buttons button {
+            flex: 1;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.8rem;
+        }
+
+        .btn-primary {
+            background: #2196F3;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        /* Progress bar for download */
+        .progress-bar {
+            height: 4px;
+            background: #e2e8f0;
+            border-radius: 2px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .progress {
+            height: 100%;
+            background: #2196F3;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="nav-top">
+        <img src="logo.png" alt="COMANAV" class="logo">
+        
+        <div class="custom-menu-bar">
+            <div class="menu-item">
+                <button class="menu-trigger">📁 FICHIER</button>
+                <div class="dropdown-content">
+                    <a href="#" id="menuOpenFolder">Ouvrir Dossier Sortie</a>
+                    <a href="#" onclick="window.close()">Quitter</a>
+                </div>
+            </div>
+            <div class="menu-item">
+                <button class="menu-trigger">🛠️ OUTILS</button>
+                <div class="dropdown-content">
+                    <a href="#" id="menuClear">Tout Effacer</a>
+                    <a href="#" onclick="document.getElementById('logConsole').scrollIntoView();">Voir les Logs</a>
+                    <a href="#" onclick="checkForUpdates()">Vérifier les mises à jour</a>
+                </div>
+            </div>
+            <div class="menu-item">
+                <button class="menu-trigger" onclick="showHelp()">❓ AIDE</button>
+            </div>
+        </div>
+
+        <div class="lang-group">
+            <button class="btn-lang" onclick="changeLang('en')">English 🇬🇧</button>
+            <button class="btn-lang" onclick="changeLang('fr')">Français 🇫🇷</button>
+            <button id="btnClear" data-i18n="clear_all">TOUT EFFACER 🗑️</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2 data-i18n="vessel_specs">1. Spécifications du Navire</h2>
+        <div class="grid">
+            <div class="input-group"><label data-i18n="vessel_name">Nom du Navire</label><input type="text" id="vesselName"></div>
+            <div class="input-group"><label data-i18n="imo">N° IMO</label><input type="text" id="imo" maxlength="7"></div>
+            <div class="input-group"><label data-i18n="flag">Pavillon</label><input type="text" id="flag"></div>
+            <div class="input-group"><label data-i18n="grt">Jauge Brute (GRT)</label><input type="text" id="grt"></div>
+            <div class="input-group"><label data-i18n="dwt">Port en Lourd (DWT)</label><input type="text" id="dwt"></div>
+            <div class="input-group"><label data-i18n="loa">Longueur (LOA)</label><input type="text" id="loa"></div>
+            <div class="input-group"><label data-i18n="tva">TVA</label><input type="text" id="tva"></div>
+            <div class="input-group"><label data-i18n="owner">Armateur / Manager</label><input type="text" id="owner"></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2 data-i18n="voyage_parties">2. Voyage & Dates</h2>
+        <div class="grid">
+            <div class="input-group">
+                <label data-i18n="current_port">Port Actuel</label>
+                <select id="currentPort">
+                    <option value="">Sélectionner</option>
+                    <option value="LAAYOUNE">LAAYOUNE</option>
+                    <option value="TAN TAN">TAN TAN</option>
+                    <option value="DAKHLA">DAKHLA</option>
+                </select>
+            </div>
+            <div class="input-group"><label data-i18n="port_from">Provenance</label><input type="text" id="portFrom"></div>
+            <div class="input-group"><label data-i18n="port_to">Destination</label><input type="text" id="portTo"></div>
+            <div class="input-group"><label data-i18n="arrival_date">Date d'Arrivée (ETA)</label><input type="date" id="arrivalDate"></div>
+            <div class="input-group"><label data-i18n="berthing_date">Date d'Accostage</label><input type="date" id="berthingDate"></div>
+            <div class="input-group"><label data-i18n="sailing_date">Date de Départ (ETS)</label><input type="date" id="sailingDate"></div>
+            <div class="input-group"><label data-i18n="shipper">Chargeur</label><input type="text" id="shipper"></div>
+            <div class="input-group"><label data-i18n="receiver">Réceptionnaire</label><input type="text" id="receiver"></div>
+
+            <div id="extraDakhla">
+                <div class="grid">
+                    <div class="input-group"><label>Gardiens (Jour)</label><input type="number" id="watchDay" value="3"></div>
+                    <div class="input-group"><label>Gardiens (Nuit)</label><input type="number" id="watchNight" value="3"></div>
+                    <div class="input-group" style="grid-column: span 2; flex-direction: row; align-items: center; gap: 10px; margin-top: 15px;">
+                        <input type="checkbox" id="includeRemorquage" style="width: 18px; height: 18px;" checked>
+                        <label style="margin: 0;">Inclure Remorquage (Bon Pilote)</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid" style="grid-template-columns: 1fr 2fr;">
+        <div class="card">
+            <h2 data-i18n="op_selection">3. Mode d'Opération</h2>
+            <div class="op-selector">
+                <button id="btnImport" class="op-btn btn-active" data-i18n="import">Import</button>
+                <button id="btnExport" class="op-btn" data-i18n="export">Export</button>
+            </div>
+        </div>
+        <div class="card">
+            <h2 data-i18n="cargo_decl">4. Déclaration Cargaison</h2>
+            <div class="cargo-controls">
+                <input type="text" id="cargoDesc" style="flex:3" placeholder="Description">
+                <input type="text" id="cargoQty" style="flex:1" placeholder="Qté">
+                <input type="text" id="cargoUnit" style="flex:1" value="MT">
+                
+                <button id="btnAddCargo" class="btn-lang" data-i18n="add_item" style="background:var(--success); padding: 10px 20px;">AJOUTER</button>
+            </div>
+            <div id="cargoList" style="margin-top: 10px;"></div>
+        </div>
+    </div>
+
+    <div class="action-row">
+        <button id="btnGenerate" class="btn-main" data-i18n="btn_generate">1. Générer Dossier DOCX</button>
+        <button id="btnPdf" class="btn-main" data-i18n="btn_pdf">2. Exporter en PDF</button>
+        <button id="btnFolder" class="btn-main" data-i18n="btn_folder">Ouvrir le Dossier</button>
+    </div>
+
+    <div id="logConsole">> Système opérationnel. Prêt pour la saisie IMO.</div>
+
+    <div class="footer">
+        Powered by <a href="mailto:eun.aasmahri@gmail.com">ASMAHRI Abderrahman</a>
+    </div>
+</div>
+
+<!-- Update Available Notification -->
+<div id="updateNotification" class="update-notification">
+    <div class="update-content">
+        <h3>🎯 Mise à jour disponible</h3>
+        <p>Une nouvelle version <span id="updateVersion"></span> est disponible.</p>
+        <p id="updateChangelog"></p>
+        <div class="progress-bar">
+            <div class="progress" id="updateProgress"></div>
+        </div>
+        <div class="update-buttons">
+            <button onclick="downloadUpdate()" class="btn-primary">Télécharger maintenant</button>
+            <button onclick="dismissUpdate()" class="btn-secondary">Plus tard</button>
+        </div>
+    </div>
+</div>
+
+<!-- Update Ready Notification -->
+<div id="updateReadyNotification" class="update-ready-notification">
+    <div class="update-content">
+        <h3>✅ Mise à jour téléchargée</h3>
+        <p>La version <span id="updateReadyVersion"></span> est prête à être installée.</p>
+        <p>Redémarrez l'application pour appliquer la mise à jour.</p>
+        <div class="update-buttons">
+            <button onclick="installUpdate()" class="btn-primary">Redémarrer et installer</button>
+            <button onclick="dismissUpdateReady()" class="btn-secondary">Plus tard</button>
+        </div>
+    </div>
+</div>
+
+<!-- Help Modal -->
+<div id="helpModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeHelp()">&times;</span>
+        <img src="logo.png" style="width: 150px; margin-bottom: 10px;">
+        <h3 style="color: var(--accent);">Vessel Dossier V0.1</h3>
+        <p>Application professionnelle pour la gestion des escales et la génération automatisée de documents portuaires.</p>
+        <hr>
+        <p><strong>Développeur :</strong> ASMAHRI Abderrahman</p>
+        <p><strong>Contact :</strong> <a href="mailto:eun.aasmahri@gmail.com">eun.aasmahri@gmail.com</a></p>
+        <button class="btn-lang" style="background: var(--accent); margin-top: 15px;" onclick="closeHelp()">FERMER</button>
+    </div>
+</div>
+
+<script src="renderer.js"></script>
+</body>
+</html>
